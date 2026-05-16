@@ -43,6 +43,9 @@ vendor/
 .DS_Store
 Thumbs.db
 
+# Docs
+site/
+
 # Misc
 *.log
 *.tmp

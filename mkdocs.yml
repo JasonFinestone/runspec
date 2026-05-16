@@ -1,0 +1,17 @@
+site_name: runspec
+site_url: https://JasonFinestone.github.io/runspec
+repo_url: https://github.com/JasonFinestone/runspec
+repo_name: JasonFinestone/runspec
+
+theme:
+  name: material
+  palette:
+    primary: indigo
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Format Reference: format.md
+  - Python Library: python.md
+  - CLI: cli.md
+  - Agent Integration: agents.md
