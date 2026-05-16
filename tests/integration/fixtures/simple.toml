@@ -1,0 +1,14 @@
+# Integration fixture: simple.toml
+# Tests basic arg parsing and inference for all language packs.
+
+[config]
+autonomy-default = "confirm"
+
+[greet]
+description = "Greet someone from the command line"
+autonomy    = "autonomous"
+
+[greet.args]
+name  = {type = "str"}
+loud  = {default = false}
+times = {default = 1}

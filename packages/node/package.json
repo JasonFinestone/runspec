@@ -1,0 +1,28 @@
+{
+  "name": "runspec-node",
+  "version": "0.1.0",
+  "description": "Node/TypeScript language pack for runspec",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": ["runspec", "cli", "arguments", "agents", "mcp"],
+  "author": "Jason Finestone",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JasonFinestone/runspec"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  },
+  "dependencies": {
+    "smol-toml": "^1.0.0"
+  }
+}

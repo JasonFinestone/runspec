@@ -1,0 +1,18 @@
+name: Go
+
+on:
+  push:
+    paths:
+      - "packages/go/**"
+      - ".github/workflows/go.yml"
+  pull_request:
+    paths:
+      - "packages/go/**"
+
+# Stub — activates when packages/go is implemented.
+jobs:
+  placeholder:
+    name: Go (not yet implemented)
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "runspec-go is planned. This workflow will run tests when implemented."

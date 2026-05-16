@@ -1,0 +1,106 @@
+# runspec
+
+> A language-agnostic, TOML-based interface specification for anything runnable —
+> scripts, applications, and MCP tools — readable by humans and AI agents without conversion.
+
+[![Python](https://img.shields.io/pypi/v/runspec?label=pip%20install%20runspec)](https://pypi.org/project/runspec)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/JasonFinestone/runspec/actions/workflows/python.yml/badge.svg)](https://github.com/JasonFinestone/runspec/actions)
+
+---
+
+## The Problem
+
+Argument definitions are buried in code. `argparse` configs require reading Python.
+Click and Typer decorators are better but still code-first. When AI agents need to
+invoke a script as a tool, the interface has to be re-described in a separate skills
+file — duplicating what already exists.
+
+**The insight:** an interface definition *is* a skill description. If you know something
+accepts `--input-file`, `--model`, and `--output-format [json|csv]`, you already know
+how to invoke it as an agent tool, render it as a form, or generate an implementation.
+
+## The Solution
+
+A single `runspec.toml` — or a `[tool.runspec]` section in `pyproject.toml` — that
+serves as the single source of truth for documentation, validation, agent tool schemas,
+form rendering, and autonomy policy.
+
+## Quick Start
+
+```bash
+pip install runspec
+```
+
+Add your script's interface to `pyproject.toml`:
+
+```toml
+[project.scripts]
+greet = "mypackage.greet:main"
+
+[tool.runspec.greet]
+description = "Greet someone from the command line"
+autonomy    = "autonomous"
+
+[tool.runspec.greet.args]
+name  = {type = "str"}
+loud  = {default = false}
+times = {default = 1}
+```
+
+Use it in your script:
+
+```python
+from runspec import parse
+
+def main():
+    args = parse()
+    message = f"Hello, {args.name}!"
+    if args.loud:
+        message = message.upper()
+    for _ in range(args.times):
+        print(message)
+```
+
+Make it agent-discoverable:
+
+```bash
+runspec discover --format mcp
+```
+
+That's it. Your script is now a typed, validated, agent-callable tool.
+
+---
+
+## Features
+
+- **Spec first** — write the interface before the implementation
+- **Zero boilerplate** — one import, one `parse()` call
+- **Rich return object** — every arg carries its full metadata alongside its value
+- **Inference over declaration** — type, required, and choice inferred from context
+- **Enforced priority stack** — CLI → env → config → default, automatically
+- **Autonomy control** — declare whether agents can run freely, need confirmation, or must ask
+- **Form rendering** — spec maps directly to MCP chat-native forms
+- **Agent discovery** — `runspec discover` finds all runspec-aware tools in the environment
+- **Language agnostic** — same format for Python, Node, shell, or any language
+
+## Repository Structure
+
+This is a mono-repo containing all official runspec language packs:
+
+| Package | Install | Status |
+|---|---|---|
+| `runspec` (Python) | `pip install runspec` | Active |
+| `runspec-node` | `npm install runspec-node` | Planned |
+| `runspec-go` | `go get github.com/JasonFinestone/runspec/go` | Planned |
+
+## Documentation
+
+- [Format Specification](spec/SPEC.md)
+- [Python Package](packages/python/README.md)
+- [Design Document](DESIGN.md)
+- [Contributing](CONTRIBUTING.md)
+
+## License
+
+MIT — see [LICENSE](LICENSE)

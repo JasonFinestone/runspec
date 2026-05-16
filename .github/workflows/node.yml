@@ -1,0 +1,18 @@
+name: Node
+
+on:
+  push:
+    paths:
+      - "packages/node/**"
+      - ".github/workflows/node.yml"
+  pull_request:
+    paths:
+      - "packages/node/**"
+
+# Stub — activates when packages/node is implemented.
+jobs:
+  placeholder:
+    name: Node (not yet implemented)
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "runspec-node is planned. This workflow will run tests when implemented."
