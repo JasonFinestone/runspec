@@ -1175,6 +1175,29 @@ This is the version of `runspec` that makes the tool genuinely transformative ra
 
 ## Roadmap
 
+### Log-file default location: venv guard
+
+`_resolve_log_dir()` currently uses `{sys.prefix}/logs` with a fallback to
+`~/logs` only when the directory isn't writable. That's the right home
+*inside a venv* — one logs dir per environment, survives reinstalls — but
+`sys.prefix` outside a venv points at the system Python install (e.g.
+`/usr` or `/opt/homebrew`), which is either unwritable (fine, falls back)
+or, worse, writable and shared across every Python project on the machine
+(silent log pollution).
+
+Add a `sys.prefix != sys.base_prefix` guard up front: only treat
+`{sys.prefix}/logs` as the candidate when we're demonstrably in a venv.
+Otherwise skip straight to `~/logs/` — predictable, per-user, never
+shared. Should also cover the conda case (`CONDA_PREFIX`) and any
+PEP 668 system-managed Python where writing into `sys.prefix` is
+actively discouraged.
+
+Tests need to pin both `sys.prefix` and `sys.base_prefix` (existing
+fixtures only pin `sys.prefix`) so the no-venv path is exercised. Node
+has the equivalent question — `{project_root}/logs/` resolves via
+nearest `package.json`, which is a different model but worth a parity
+review while we're touching this.
+
 ### Reserved-name schema validator
 
 Auto-injected arguments are growing — `debug` and `no-summary` are added by
