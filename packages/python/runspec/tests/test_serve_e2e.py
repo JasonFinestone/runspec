@@ -273,9 +273,7 @@ def test_spec_default_does_not_overwrite_env_var(e2e_pkg: Any) -> None:
         )
         assert resp["result"]["isError"] is False
         text = resp["result"]["content"][0]["text"].strip()
-        assert text == "operator-value", (
-            f"Expected 'operator-value', got '{text}' — spec default overwrote the server env var"
-        )
+        assert text == "operator-value", f"Expected 'operator-value', got '{text}' — spec default overwrote the server env var"
     finally:
         _stop(proc)
 
