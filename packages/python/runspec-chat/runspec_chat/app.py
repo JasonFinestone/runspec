@@ -505,7 +505,7 @@ async def call_tool(tool_call: ToolCall) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _parse_slash(text: str) -> tuple[str, dict]:
+def _parse_slash(text: str) -> tuple[str, dict, list[str]]:
     try:
         parts = shlex.split(text[1:])
     except ValueError:
@@ -513,24 +513,28 @@ def _parse_slash(text: str) -> tuple[str, dict]:
 
     name = parts[0] if parts else ""
     args: dict = {}
+    unknown: list[str] = []
     i = 1
     while i < len(parts):
         token = parts[i]
         if token.startswith("--"):
             key = token[2:].replace("-", "_")
-            if i + 1 < len(parts) and not parts[i + 1].startswith("--"):
+            if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
                 args[key] = parts[i + 1]
                 i += 2
             else:
                 args[key] = True
                 i += 1
+        elif token.startswith("-"):
+            unknown.append(token)
+            i += 1
         else:
             i += 1
-    return name, args
+    return name, args, unknown
 
 
 async def _handle_slash(text: str) -> None:
-    tool_name, tool_input = _parse_slash(text)
+    tool_name, tool_input, unknown_flags = _parse_slash(text)
     if not tool_name:
         await cl.Message(content="Usage: `/tool_name --arg value`").send()
         return
@@ -549,6 +553,12 @@ async def _handle_slash(text: str) -> None:
             content=f"Unknown tool `{tool_name}`. Available: {available}"
         ).send()
         return
+
+    if unknown_flags:
+        flag_list = " ".join(f"`{f}`" for f in unknown_flags)
+        await cl.Message(
+            content=f"⚠ Short flags are not supported: {flag_list}. Use `--long-form` instead."
+        ).send()
 
     if tool_input.get("help"):
         schema = tool_def.get("input_schema", {})
