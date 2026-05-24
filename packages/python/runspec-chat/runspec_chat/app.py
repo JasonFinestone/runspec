@@ -9,9 +9,11 @@ from pathlib import Path
 import tomllib
 
 import chainlit as cl
-from chainlit.types import CommandDict
+from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+from chainlit.types import CommandDict, ThreadDict
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from starlette.datastructures import Headers
 
 from runspec_chat.adapter import ChatResponse, ToolCall
 from runspec_chat.adapters.anthropic_direct import DEFAULT_SYSTEM, AnthropicAdapter
@@ -36,6 +38,15 @@ _sync_user_env(
     hosts_path=_HOSTS_PATH,
     chainlit_config=_chainlit_root / ".chainlit" / "config.toml",
 )
+
+_DB_PATH = Path(
+    os.environ.get("RUNSPEC_CHAT_DB", "~/.config/runspec-chat/history.db")
+).expanduser()
+
+
+@cl.data_layer
+def get_data_layer() -> SQLAlchemyDataLayer:
+    return SQLAlchemyDataLayer(conninfo=f"sqlite+aiosqlite:///{_DB_PATH}")
 
 
 def _load_host_categories() -> dict[str, str]:
@@ -93,6 +104,14 @@ def _format_user(login: str, display_name: str | None) -> str:
 
 
 _USER_LOGIN, _USER_DISPLAY_NAME = _get_user_identity()
+
+
+@cl.header_auth_callback
+async def header_auth_callback(headers: Headers) -> cl.User | None:
+    return cl.User(
+        identifier=_USER_LOGIN,
+        metadata={"display_name": _USER_DISPLAY_NAME or _USER_LOGIN},
+    )
 
 
 async def _refresh_commands() -> None:
@@ -238,6 +257,38 @@ async def on_chat_end() -> None:
             await asyncio.wait_for(asyncio.shield(t), timeout=2.0)
         except Exception:
             t.cancel()
+
+
+@cl.on_chat_resume
+async def on_chat_resume(thread: ThreadDict) -> None:
+    messages = []
+    for step in thread.get("steps", []):
+        role = None
+        if step.get("type") == "user_message":
+            role = "user"
+        elif step.get("type") == "assistant_message":
+            role = "assistant"
+        if role and step.get("output"):
+            messages.append({"role": role, "content": step["output"]})
+    cl.user_session.set("messages", messages)
+    cl.user_session.set("mcp_tools", {})
+    cl.user_session.set("ssh_tasks", {})
+    cl.user_session.set("ssh_stops", {})
+    cl.user_session.set(
+        "user_identity", {"login": _USER_LOGIN, "display_name": _USER_DISPLAY_NAME}
+    )
+
+    env = cl.user_session.get("env") or {}
+    api_key = env.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    user_str = _format_user(_USER_LOGIN, _USER_DISPLAY_NAME)
+    system = DEFAULT_SYSTEM + f"\nSession user: {user_str}."
+    cl.user_session.set(
+        "adapter",
+        AnthropicAdapter(model=_DEFAULT_MODEL, api_key=api_key or None, system=system),
+    )
+
+    await _connect_local()
+    await _connect_ssh_hosts()
 
 
 async def _mcp_task(
