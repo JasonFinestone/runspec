@@ -171,10 +171,14 @@ def _ensure_db(db_path: Path) -> None:
 
     # Add any columns introduced after the initial schema (ALTER TABLE is
     # idempotent-guarded by checking existing columns first).
-    _add_columns_if_missing(con, "steps", [
-        ("autoCollapse", "INTEGER"),
-        ("icon", "TEXT"),
-    ])
+    _add_columns_if_missing(
+        con,
+        "steps",
+        [
+            ("autoCollapse", "INTEGER"),
+            ("icon", "TEXT"),
+        ],
+    )
 
     con.commit()
     con.close()
