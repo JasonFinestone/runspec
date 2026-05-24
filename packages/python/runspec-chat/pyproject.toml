@@ -29,6 +29,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+
 [tool.mypy]
 python_version = "3.11"
 mypy_path = "../runspec"
