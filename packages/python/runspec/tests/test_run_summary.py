@@ -12,10 +12,10 @@ import runspec.logging_setup as ls
 from runspec.logging_setup import (
     _ConsoleFormatter,
     _emit_run_summary,
+    _get_invoker,
     _JsonFormatter,
     _RunSummaryCounter,
     _SensitiveFilter,
-    _get_invoker,
     configure_logging,
 )
 
