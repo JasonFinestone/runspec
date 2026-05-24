@@ -79,8 +79,11 @@ def main() -> None:
         os.environ["RUNSPEC_CHAT_HOSTS"] = str(spec.hosts)
 
     app_py = Path(__file__).parent / "app.py"
+    # Use our launcher instead of `python -m chainlit` so the Python 3.14
+    # nest_asyncio compatibility shim is applied before chainlit's CLI runs.
     cmd = [
-        sys.executable, "-m", "chainlit", "run", str(app_py),
+        sys.executable, "-m", "runspec_chat._chainlit_launcher",
+        "run", str(app_py),
         "--port", str(spec.port),
         "--host", str(spec.host),
     ]
