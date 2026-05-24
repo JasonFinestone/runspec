@@ -317,7 +317,9 @@ async def _mcp_task(
                 ready.set()
                 await stop.wait()
     except Exception as exc:
-        import traceback; traceback.print_exc()
+        import traceback
+
+        traceback.print_exc()
         print(f"[_mcp_task] failed: {exc}", flush=True)
         ready.set()  # unblock caller even on failure
 
@@ -557,7 +559,7 @@ async def _builtin_setup_keys(tool_input: dict) -> str:
         pub_key_content = pub_key.read_text().strip()
         if is_windows:
             host_lines = "\n".join(
-                f"  type \"%USERPROFILE%\\.ssh\\runspec-chat_ed25519.pub\" | ssh {target} "
+                f'  type "%USERPROFILE%\\.ssh\\runspec-chat_ed25519.pub" | ssh {target} '
                 f'"mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"'
                 for _, target, _ in resolved
             )
@@ -818,7 +820,9 @@ def _is_bare_command(text: str) -> bool:
         return False
     name = parts[0]
     mcp_tools: dict = cl.user_session.get("mcp_tools", {}) if cl.user_session else {}
-    local_tools: list = cl.user_session.get("local_tools", []) if cl.user_session else []
+    local_tools: list = (
+        cl.user_session.get("local_tools", []) if cl.user_session else []
+    )
     all_tools = local_tools + [t for tools in mcp_tools.values() for t in tools]
     return any(t["name"] == name for t in all_tools)
 
