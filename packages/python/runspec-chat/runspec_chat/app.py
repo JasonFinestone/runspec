@@ -291,8 +291,15 @@ async def _connect_local() -> None:
             content=f"── local ──\n✓ Local tools ready: `{'`, `'.join(user_tools)}` | running as **{user_str}**"
         ).send()
     else:
+        _ssh_key_exists = any(
+            (Path.home() / ".ssh" / f"runspec-chat_{kt}").exists()
+            for kt in ("ed25519", "rsa")
+        )
+        _setup_hint = (
+            "" if _ssh_key_exists else " or type `/setup-keys` to set up SSH keys."
+        )
         await cl.Message(
-            content=f"── local ──\nReady. Connect a remote host via the **plug icon**, or type `/setup-keys` to set up SSH keys. | running as **{user_str}**"
+            content=f"── local ──\nReady. Connect a remote host via the **plug icon**{_setup_hint} | running as **{user_str}**"
         ).send()
     await _refresh_commands()
 
