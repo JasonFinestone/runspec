@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+import warnings
 from pathlib import Path
 
 import runspec as rs
@@ -24,9 +25,10 @@ def _resolve_hosts_path(path: Path) -> Path:
     if not path.exists():
         legacy = path.parent / "hosts.toml"
         if legacy.exists():
-            print(
+            warnings.warn(
                 f"[runspec-chat] {legacy} is deprecated; rename to {path.name} to suppress this warning.",
-                file=sys.stderr,
+                DeprecationWarning,
+                stacklevel=2,
             )
             return legacy
     return path
