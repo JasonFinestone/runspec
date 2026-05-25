@@ -268,10 +268,18 @@ That's it. No SQLite. No alert DB. No mirror of runnable catalogs.
   the alert sources' job (PagerDuty, email, etc.). The console is a
   shift-start dashboard, not a 24/7 watcher.
 
-### 9. Information architecture (views) — **PARTIALLY DECIDED**
+### 9. Information architecture (views) — **DECIDED (v1 scope)**
 
-Persistent left sidebar nav: **Today** · **Runnables** · **Schedules** ·
-**History** · **Watch** · **Hosts** · **Chat**. Home route is **Today**.
+**Primary surface (home): Command Interface.** A Tiptap input bar at the
+bottom + a message/output area above it. This is both the runnable launcher
+and the LLM chat entry point — one surface, not two. Home route lands here.
+
+**Today view deferred to v2.** The shift-inbox / alert-aggregation surface
+is out of v1 scope. v1 focuses on making the command interface and
+runnable management excellent first.
+
+Persistent left sidebar nav (v1): **Console** · **Runnables** · **Hosts** ·
+**History** · **Schedules**. Home route is **Console** (the command interface).
 
 #### Core architectural constraint (from user)
 
@@ -499,60 +507,90 @@ Overnight outcomes panel of Today view on the next "Get Today".
 - Default model: `claude-sonnet-4-6` (fast, inexpensive for frequent
   dispatch calls). User can override in config.
 
-### 7b. Framework & scope mapping — **PICKED UP NEXT SESSION**
+### 7b. Framework & scope mapping — **DECIDED**
 
-User wants to map out backend framework + frontend framework choices
-together, alongside scoping what the backend actually needs to expose,
-in a follow-up session on their PC. The work is paused here.
+#### Backend shell
+**pywebview** — no HTTP server, no port. The SPA runs inside a native
+WebView2 window (built into Windows 10/11 via Edge — no additional install
+required). Python functions are exposed to JavaScript via the pywebview JS
+bridge (`window.pywebview.api.*`). No CORS, no WebSocket protocol, no port
+management.
 
-#### What's locked in already
+Windows-only is explicit and deliberate — not a limitation to paper over.
+The target environment is locked-down corporate Windows desktops. WebView2
+is already present as a Windows system component; it is not an additional
+runtime install.
 
-- SPA in a browser, backend in Python, both shipped in one wheel.
-- Localhost only, single user, no external consumers, no multi-user.
-- Backend and frontend tightly coupled (we own both ends; no stable
-  contract needed).
-- All runspec architectural constraints from §9 (everything human-runnable
-  on the host CLI, no console-only protocols).
+#### Frontend framework
+**React + Ant Design.** Ant Design was built for ops and admin tooling —
+tables, forms, sidebars, status indicators, modals all pre-built to
+production quality. Bundle size is irrelevant (SPA served from disk via
+pywebview, not over a network). Build tooling: **Vite** (dev-only; end
+users never touch Node).
 
-#### What to map out together next session
+#### Slash command input
+**Tiptap** with the official first-party Slash Dropdown Menu component.
+Typing `/` opens a filtered dropdown of available runnables across all
+connected hosts. Characters typed after `/` filter the list live. Up-arrow
+command history added via Tiptap's keyboard shortcut API. The input bar is
+also the LLM chat entry point — same surface, same slash trigger.
 
-1. **Backend framework.** Three candidates:
-   - **FastAPI** — what everyone reaches for; OpenAPI + Pydantic; possibly
-     overkill for localhost-only single-user.
-   - **Starlette (bare)** — FastAPI minus the extras. Lighter dep tree.
-   - **Tiny custom WSGI/ASGI app on stdlib `http.server` + Starlette's
-     WebSocket helper** — pushes the "no real server" idea to its limit;
-     ~zero deps.
+#### Global command palette
+**cmdk** — `Ctrl+K` anywhere in the console opens a searchable runnable
+picker. Complements the slash input; same runnable list, different trigger.
+Good for "I know roughly what I want but don't remember the exact name."
 
-   Decision criteria to discuss: what endpoints we actually need (probably
-   ~10), do we want auto-generated docs, what live-stream protocol
-   (WebSocket vs SSE) is right per panel.
+#### Message / output display
+Chainlit-inspired step display (tool call icons, step indicators, stdout
+output blocks) reproduced using Ant Design `Steps`, `Tag`, and `Card`
+components. Chainlit's open-source component patterns are the UX reference;
+Chainlit itself is not a dependency.
 
-2. **Frontend framework.** Same shortlist as before — React, Svelte,
-   SolidJS, plus possibly:
-   - **Vanilla JS + Web Components** if we want zero framework lock-in
-     (viable because we control the whole product and tab-based desktop
-     UIs don't need much).
-   - **HTMX** if we want server-rendered HTML with sprinkles of
-     interactivity (no SPA build step at all — backend renders fragments).
+#### Dependency risk principle
+Libraries ranked by abandonment / breakage risk:
+- **Low:** Ant Design (Alibaba-backed, decade of history), cmdk
+  (shadcn ecosystem, tiny stable API), Tiptap core (company-backed,
+  migration guides on breaking changes).
+- **Higher:** any community wrapper that sits between two other libraries
+  (e.g. a third-party Tiptap slash-command package that could fall out of
+  sync if Tiptap's suggestion API shifts).
 
-   Decision criteria to discuss: live-update mechanics (WebSocket-driven
-   log streaming + Today-view refreshes), bundle size budget, dev
-   ergonomics for ops dashboards.
+Mitigation rules:
+1. **Prefer official first-party components.** Tiptap ships its own Slash
+   Dropdown Menu — use that over community wrappers unless it is missing
+   something concrete.
+2. **One adapter component per library.** `CommandInput.tsx` owns Tiptap,
+   `CommandPalette.tsx` owns cmdk, `ConsoleLayout.tsx` owns Ant Design
+   layout. No library API leaks past its own adapter file. If a library
+   breaks or is abandoned, one file changes — not a dozen.
 
-3. **Actual endpoint inventory.** Enumerate what the backend must expose:
-   - `GET /hosts` (list + connection state)
-   - `GET /hosts/:h/runnables` (catalog from `runspec local --format anthropic`)
-   - `POST /hosts/:h/runnables/:r/invoke` (returns invocation id + WS URL)
-   - `WS /invocations/:id/stream` (stdout/stderr lines)
-   - `GET /hosts/:h/runnables/:r/log` (recent audit-log records)
-   - `GET /today` (fan-out get-alerts + overnight outcomes + upcoming + in-flight)
-   - `POST /chat` (LLM message with tool dispatch)
-   - `GET /schedules` / `POST /schedules` / `DELETE /schedules/:id`
-   - `GET /config/jump-hosts` / `PUT /config/jump-hosts`
+#### pywebview bridge API surface
 
-   The list above looks small enough that bare Starlette or even vanilla
-   ASGI is workable — that's the conversation for next session.
+Two interaction patterns replace the HTTP endpoint inventory:
+
+**Pull** — JS calls Python, Python returns data:
+| Call | What it does |
+|---|---|
+| `get_hosts()` | List of configured hosts + live connection state |
+| `get_runnables(host)` | Runnable catalog via `runspec local --format json` |
+| `get_history(host, runnable)` | Recent records from `{venv}/logs/{r}.log` |
+| `get_schedules()` | Task Scheduler entries under `\runspec-console\` |
+| `get_config()` / `save_config(data)` | Read / write `jump-hosts.toml` |
+| `create_schedule(data)` / `delete_schedule(id)` | `schtasks` CRUD |
+| `invoke_runnable(host, runnable, args)` | Start a run; returns invocation id |
+| `send_chat(message, invocation_id)` | Send message to LLM with tool schemas |
+
+**Push** — Python calls `window.evaluate_js()` to fire JS CustomEvents;
+React listens with `addEventListener`:
+| Event | Payload |
+|---|---|
+| `runspec:output` | `{ id, line, stream }` — one line of stdout/stderr |
+| `runspec:run_end` | `{ id, exit_code, duration_ms }` — run complete |
+| `runspec:token` | `{ id, token }` — one LLM streaming token |
+| `runspec:host_status` | `{ host, connected, runnable_count }` |
+
+The SPA starts a run via `invoke_runnable()` (pull); all subsequent output
+arrives as `runspec:output` push events tagged with the returned id.
 
 ### 15. Forward-looking: `runspec-flow` orchestration layer — **NOTED**
 
@@ -599,22 +637,32 @@ To be filled in concretely once §7b lands. Skeleton:
 - **Migration:** existing `~/.config/runspec-chat/jump_hosts.toml` is
   copied to `~/.config/runspec-console/jump-hosts.toml` on first launch.
 
-## Status: paused for next session
+## Status: design complete — ready for implementation
 
-All architectural questions are resolved **except** §7b (backend +
-frontend framework choice + endpoint inventory mapping). The user is
-picking that up on their PC.
+All architectural questions resolved. v1 scope is locked.
 
-Decided:
-§1 identity · §2 Windows launch · §3 tech stack (SPA confirmed, single-user) ·
+**All sections decided:**
+§1 identity · §2 Windows launch · §3 tech stack (pywebview + React) ·
 §4 naming · §5 distribution · §6 BC with runspec-chat · §7 transport
-architecture · §7a host vision · §8 persistence · §9 information
-architecture (with the "runnables must be human-runnable on the CLI"
-constraint) · §10 scheduling (Windows Task Scheduler) · §11 alert
-ingestion contract + poll cadence (interval is a runnable arg) ·
-§11a live logs & monitoring · §12 security (localhost + CORS, no CSRF
-token needed) · §13 chat panel scope (tool-dispatch + digest) ·
-§14 host provisioning v1 scope · §15 runspec-flow forward-looking note.
+architecture · §7a host vision · §7b framework + bridge API surface ·
+§8 persistence · §9 information architecture · §10 scheduling ·
+§11 alert ingestion (v2) · §11a live logs · §12 security · §13 LLM
+scope · §14 host provisioning · §15 runspec-flow note.
 
-Open:
-§7b backend + frontend framework + endpoint inventory.
+**v1 scope (build this):**
+- Command interface — Tiptap input bar + output area (home screen)
+- Slash command picker (`/`) — Tiptap first-party Slash Dropdown Menu
+- Global command palette (`Ctrl+K`) — cmdk
+- LLM tool-dispatch — Claude API, tool schemas from `runspec local`,
+  constrained to runnable invocation only (not general chat)
+- Runnables view — browse catalog across hosts, run from UI
+- Hosts view — connect, bootstrap remote venvs (`setup-host`)
+- History view — audit log reader across hosts
+- Schedules view — Windows Task Scheduler CRUD
+- pywebview native window, React + Ant Design, Vite build
+
+**v2 deferred:**
+- Today view (shift inbox, alert aggregation, overnight outcomes)
+- UV swap-in for host bootstrap
+- Private PyPI support
+- runspec-flow orchestration layer
