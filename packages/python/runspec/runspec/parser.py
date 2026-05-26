@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from runspec import errors
+from runspec.env import apply_env_file
 from runspec.finder import find_config
 from runspec.inference import effective_autonomy, infer_script
 from runspec.loader import load_raw
@@ -72,6 +73,10 @@ def _parse_impl(script_name: str | None = None, argv: list[str] | None = None, c
     if name not in raw["runnables"]:
         available = ", ".join(raw["runnables"].keys()) or "(none)"
         raise errors.RunSpecError(f"✗  Runnable '{name}' not found in runspec config.\n   Available runnables: {available}\n   Config: {config_path}")
+
+    # 3.5. Load .runspec_env file into os.environ (before _apply_env so
+    # RUNSPEC_<RUNNABLE>_ARG_* vars in the file feed into arg resolution)
+    runspec_env_data = apply_env_file(raw, name)
 
     # 4. Infer defaults for the script
     raw_script = infer_script(raw["runnables"][name], config["autonomy_default"])
@@ -171,6 +176,7 @@ def _parse_impl(script_name: str | None = None, argv: list[str] | None = None, c
         arg_specs=raw_script["args"],
         group_specs=raw_script["groups"],
         raw_script=raw_script,
+        runspec_env_data=runspec_env_data,
     )
 
     # 16. Configure logging (no-op when [config.logging] absent)
@@ -611,6 +617,7 @@ def _build_runspec(
     arg_specs: dict[str, Any],
     group_specs: dict[str, Any],
     raw_script: dict[str, Any],
+    runspec_env_data: dict[str, str] | None = None,
 ) -> RunSpec:
     """Assemble the final RunSpec object."""
     groups = [
@@ -634,6 +641,7 @@ def _build_runspec(
         __runspec_agent__=agent,
         __runspec_spec__=raw_script,
         __runspec_groups__=groups,
+        _runspec_env=runspec_env_data or {},
     )
 
     for arg_name, spec in arg_specs.items():
