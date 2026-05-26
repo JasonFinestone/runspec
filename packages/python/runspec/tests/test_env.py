@@ -22,7 +22,6 @@ from runspec.env import (
 )
 from runspec.loader import load_raw
 
-
 # ── _parse_dotenv ─────────────────────────────────────────────────────────────
 
 
@@ -34,7 +33,7 @@ def test_parse_dotenv_basic(tmp_path: Path) -> None:
 
 def test_parse_dotenv_strips_quotes(tmp_path: Path) -> None:
     f = tmp_path / ".runspec_env"
-    f.write_text('KEY="hello world"\nOTHER=\'quoted\'\n')
+    f.write_text("KEY=\"hello world\"\nOTHER='quoted'\n")
     assert _parse_dotenv(f) == {"KEY": "hello world", "OTHER": "quoted"}
 
 

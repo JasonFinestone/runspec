@@ -280,6 +280,7 @@ class RunSpec:
         Returns an empty namespace if no file was found at parse time.
         """
         from runspec.env import make_env_namespace
+
         return make_env_namespace(self._runspec_env)
 
     def _set_arg(self, name: str, arg: Arg) -> None:

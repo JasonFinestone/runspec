@@ -173,11 +173,7 @@ def _normalise_args(raw: dict[str, Any]) -> dict[str, Any]:
 
     for name, value in raw.items():
         if name.startswith("runspec_") or name.startswith("runspec-"):
-            raise ValueError(
-                f"✗  Arg name '{name}' uses a reserved prefix.\n"
-                "   Names starting with 'runspec_' or 'runspec-' are reserved for the runspec framework.\n"
-                "   Rename your argument."
-            )
+            raise ValueError(f"✗  Arg name '{name}' uses a reserved prefix.\n   Names starting with 'runspec_' or 'runspec-' are reserved for the runspec framework.\n   Rename your argument.")
         if isinstance(value, dict):
             normalised[name] = _normalise_arg(name, value)
         else:
