@@ -134,7 +134,7 @@ def _parse_impl(script_name: str | None = None, argv: list[str] | None = None, c
     parsed_values = _parse_argv(argv_list, raw_script["args"])
 
     # 8. Apply env var fallbacks
-    parsed_values = _apply_env(parsed_values, raw_script["args"])
+    parsed_values = _apply_env(parsed_values, raw_script["args"], name)
 
     # 9. Apply defaults
     parsed_values = _apply_defaults(parsed_values, raw_script["args"])
@@ -531,20 +531,22 @@ def _append_or_set(current: Any, value: Any, spec: dict[str, Any]) -> Any:
 def _apply_env(
     parsed: dict[str, Any],
     arg_specs: dict[str, Any],
+    runnable_name: str,
 ) -> dict[str, Any]:
     """Apply environment variable fallbacks where values are still None.
 
     Resolution order:
-      1. RUNSPEC_ARG_<ARGNAME>  — automatic for every arg, user-settable
-      2. env aliases            — developer-declared list, for CI/Ansible/etc
+      1. RUNSPEC_<RUNNABLE>_ARG_<ARGNAME>  — automatic for every arg, user-settable
+      2. env aliases                        — developer-declared list, for CI/Ansible/etc
     """
+    runnable_prefix = runnable_name.upper().replace("-", "_")
     result = dict(parsed)
     for name, spec in arg_specs.items():
         norm = name.replace("-", "_")
         if result.get(norm) is not None:
             continue
-        # Tier 2a: automatic RUNSPEC_ARG_<ARGNAME>
-        auto_key = "RUNSPEC_ARG_" + name.upper().replace("-", "_")
+        # Tier 2a: automatic RUNSPEC_<RUNNABLE>_ARG_<ARGNAME>
+        auto_key = f"RUNSPEC_{runnable_prefix}_ARG_{name.upper().replace('-', '_')}"
         env_val = os.environ.get(auto_key)
         if env_val is not None:
             result[norm] = env_val
