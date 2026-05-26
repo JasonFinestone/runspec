@@ -243,7 +243,6 @@ def _handle_tools_call(
     if config_path:
         env["RUNSPEC_CONFIG"] = str(config_path)
 
-
     start = time.monotonic()
     result = subprocess.run([*cmd, *argv], capture_output=True, text=True, env=env)
     duration_ms = int((time.monotonic() - start) * 1000)
