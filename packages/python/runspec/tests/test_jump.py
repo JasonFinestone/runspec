@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from runspec.jump import parse_tool_argv, ssh_cmd
 from runspec.parser import _parse_argv
-
 
 # ── ssh_cmd ───────────────────────────────────────────────────────────────────
 
