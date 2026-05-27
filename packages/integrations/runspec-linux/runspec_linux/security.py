@@ -1,5 +1,4 @@
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -18,7 +17,8 @@ def main_last_logins() -> None:
     try:
         result = subprocess.run(
             ["last", "-n", str(limit), "--time-format", "iso"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         rows = []
         for line in result.stdout.strip().splitlines():
@@ -27,13 +27,15 @@ def main_last_logins() -> None:
             parts = line.split()
             if len(parts) < 3:
                 continue
-            rows.append({
-                "user": parts[0],
-                "terminal": parts[1],
-                "from": parts[2] if len(parts) > 2 else "",
-                "login_time": parts[3] if len(parts) > 3 else "",
-                "logout_time": parts[5] if len(parts) > 5 else "",
-            })
+            rows.append(
+                {
+                    "user": parts[0],
+                    "terminal": parts[1],
+                    "from": parts[2] if len(parts) > 2 else "",
+                    "login_time": parts[3] if len(parts) > 3 else "",
+                    "logout_time": parts[5] if len(parts) > 5 else "",
+                }
+            )
         print(json.dumps(rows[:limit]))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
@@ -54,12 +56,14 @@ def main_who() -> None:
             parts = line.split()
             if len(parts) < 3:
                 continue
-            rows.append({
-                "user": parts[0],
-                "terminal": parts[1],
-                "login_time": " ".join(parts[2:4]) if len(parts) > 3 else parts[2],
-                "from": parts[4].strip("()") if len(parts) > 4 else "",
-            })
+            rows.append(
+                {
+                    "user": parts[0],
+                    "terminal": parts[1],
+                    "login_time": " ".join(parts[2:4]) if len(parts) > 3 else parts[2],
+                    "from": parts[4].strip("()") if len(parts) > 4 else "",
+                }
+            )
         print(json.dumps(rows))
     except Exception as e:
         print(json.dumps({"error": str(e)}))

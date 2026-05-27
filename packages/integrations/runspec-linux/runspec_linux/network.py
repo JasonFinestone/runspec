@@ -17,7 +17,8 @@ def main_ping_host() -> None:
     try:
         result = subprocess.run(
             ["ping", "-c", str(count), host],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         output = result.stdout + result.stderr
 
@@ -32,13 +33,17 @@ def main_ping_host() -> None:
         if m2:
             loss_pct = float(m2.group(1))
 
-        print(json.dumps({
-            "host": host,
-            "reachable": received > 0,
-            "packets_sent": sent,
-            "packets_received": received,
-            "loss_pct": loss_pct,
-        }))
+        print(
+            json.dumps(
+                {
+                    "host": host,
+                    "reachable": received > 0,
+                    "packets_sent": sent,
+                    "packets_received": received,
+                    "loss_pct": loss_pct,
+                }
+            )
+        )
     except Exception as e:
         print(json.dumps({"error": str(e), "host": host}))
         sys.exit(1)
@@ -54,7 +59,16 @@ def main_check_port() -> None:
     try:
         with socket.create_connection((host, port), timeout=timeout):
             elapsed_ms = round((time.monotonic() - start) * 1000, 1)
-            print(json.dumps({"host": host, "port": port, "open": True, "response_ms": elapsed_ms}))
+            print(
+                json.dumps(
+                    {
+                        "host": host,
+                        "port": port,
+                        "open": True,
+                        "response_ms": elapsed_ms,
+                    }
+                )
+            )
     except (OSError, TimeoutError):
         elapsed_ms = round((time.monotonic() - start) * 1000, 1)
         print(json.dumps({"host": host, "port": port, "open": False, "response_ms": elapsed_ms}))
@@ -89,7 +103,7 @@ def _parse_ss(output: str, state_filter: str) -> list[dict]:
         parts = line.split()
         if len(parts) < 5:
             continue
-        proto, recv_q, send_q, local, peer = parts[0], parts[1], parts[2], parts[3], parts[4]
+        proto, local, peer = parts[0], parts[3], parts[4]
         state = parts[5] if len(parts) > 5 and not parts[5].startswith("users:") else ""
         process = ""
         for p in parts:
@@ -104,13 +118,15 @@ def _parse_ss(output: str, state_filter: str) -> list[dict]:
         if state_filter == "listening" and "listen" not in row_state:
             continue
 
-        rows.append({
-            "proto": proto,
-            "local": local,
-            "peer": peer,
-            "state": state,
-            "process": process,
-        })
+        rows.append(
+            {
+                "proto": proto,
+                "local": local,
+                "peer": peer,
+                "state": state,
+                "process": process,
+            }
+        )
     return rows
 
 
@@ -131,11 +147,13 @@ def _parse_netstat(output: str, state_filter: str) -> list[dict]:
         if state_filter == "listening" and state.upper() != "LISTEN":
             continue
 
-        rows.append({
-            "proto": proto,
-            "local": local,
-            "peer": foreign,
-            "state": state,
-            "process": process,
-        })
+        rows.append(
+            {
+                "proto": proto,
+                "local": local,
+                "peer": foreign,
+                "state": state,
+                "process": process,
+            }
+        )
     return rows

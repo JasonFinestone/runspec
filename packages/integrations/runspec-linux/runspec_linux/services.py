@@ -20,9 +20,14 @@ def main_check_service() -> None:
 
     try:
         result = subprocess.run(
-            ["systemctl", "show", service,
-             "--property=ActiveState,SubState,LoadState,Description,ActiveEnterTimestamp"],
-            capture_output=True, text=True,
+            [
+                "systemctl",
+                "show",
+                service,
+                "--property=ActiveState,SubState,LoadState,Description,ActiveEnterTimestamp",
+            ],
+            capture_output=True,
+            text=True,
         )
         props: dict[str, str] = {}
         for line in result.stdout.strip().splitlines():
@@ -31,15 +36,19 @@ def main_check_service() -> None:
                 props[k] = v
 
         active = props.get("ActiveState", "unknown")
-        print(json.dumps({
-            "service": service,
-            "active": active == "active",
-            "active_state": active,
-            "sub_state": props.get("SubState", "unknown"),
-            "load_state": props.get("LoadState", "unknown"),
-            "description": props.get("Description", ""),
-            "since": props.get("ActiveEnterTimestamp", ""),
-        }))
+        print(
+            json.dumps(
+                {
+                    "service": service,
+                    "active": active == "active",
+                    "active_state": active,
+                    "sub_state": props.get("SubState", "unknown"),
+                    "load_state": props.get("LoadState", "unknown"),
+                    "description": props.get("Description", ""),
+                    "since": props.get("ActiveEnterTimestamp", ""),
+                }
+            )
+        )
     except Exception as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
@@ -64,13 +73,15 @@ def main_list_services() -> None:
             parts = line.split(None, 4)
             if len(parts) < 4:
                 continue
-            rows.append({
-                "unit": parts[0],
-                "load": parts[1],
-                "active": parts[2],
-                "sub": parts[3],
-                "description": parts[4] if len(parts) > 4 else "",
-            })
+            rows.append(
+                {
+                    "unit": parts[0],
+                    "load": parts[1],
+                    "active": parts[2],
+                    "sub": parts[3],
+                    "description": parts[4] if len(parts) > 4 else "",
+                }
+            )
         print(json.dumps(rows))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
@@ -88,14 +99,19 @@ def main_restart_service() -> None:
     try:
         result = subprocess.run(
             ["systemctl", "restart", service],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if result.returncode != 0:
-            print(json.dumps({
-                "service": service,
-                "restarted": False,
-                "error": result.stderr.strip(),
-            }))
+            print(
+                json.dumps(
+                    {
+                        "service": service,
+                        "restarted": False,
+                        "error": result.stderr.strip(),
+                    }
+                )
+            )
             sys.exit(1)
         print(json.dumps({"service": service, "restarted": True}))
     except Exception as e:

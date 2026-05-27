@@ -49,13 +49,17 @@ def main() -> None:
     try:
         response = nc_send(host, port, command, wait=wait, read_timeout=read_timeout)
         lines = response.splitlines()
-        print(json.dumps({
-            "host": host,
-            "port": port,
-            "command": command,
-            "stdout": response,
-            "lines": lines,
-        }))
+        print(
+            json.dumps(
+                {
+                    "host": host,
+                    "port": port,
+                    "command": command,
+                    "stdout": response,
+                    "lines": lines,
+                }
+            )
+        )
     except OSError as e:
         print(json.dumps({"error": str(e), "host": host, "port": port}))
         sys.exit(1)

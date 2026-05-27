@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 import sys
 import tarfile
 from datetime import datetime
@@ -25,11 +24,13 @@ def main_find_large_files() -> None:
                 try:
                     stat = os.stat(fpath, follow_symlinks=False)
                     if stat.st_size >= min_bytes:
-                        results.append({
-                            "path": fpath,
-                            "size_mb": round(stat.st_size / 1_048_576, 2),
-                            "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                        })
+                        results.append(
+                            {
+                                "path": fpath,
+                                "size_mb": round(stat.st_size / 1_048_576, 2),
+                                "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                            }
+                        )
                 except OSError:
                     continue
 
@@ -56,12 +57,16 @@ def main_backup_files() -> None:
             tar.add(source, arcname=source_name)
 
         size_bytes = os.path.getsize(archive_path)
-        print(json.dumps({
-            "source": source,
-            "destination": archive_path,
-            "size_bytes": size_bytes,
-            "size_mb": round(size_bytes / 1_048_576, 2),
-        }))
+        print(
+            json.dumps(
+                {
+                    "source": source,
+                    "destination": archive_path,
+                    "size_bytes": size_bytes,
+                    "size_mb": round(size_bytes / 1_048_576, 2),
+                }
+            )
+        )
     except Exception as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)

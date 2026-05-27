@@ -15,7 +15,7 @@ def main_tail_log() -> None:
     try:
         with open(file_path, errors="replace") as f:
             all_lines = f.readlines()
-        tail = [l.rstrip("\n") for l in all_lines[-lines:]]
+        tail = [line.rstrip("\n") for line in all_lines[-lines:]]
         print(json.dumps({"file": file_path, "lines": tail, "count": len(tail)}))
     except OSError as e:
         print(json.dumps({"error": str(e), "file": file_path}))
@@ -36,13 +36,17 @@ def main_search_log() -> None:
                 if regex.search(line):
                     matches.append(line.rstrip("\n"))
         trimmed = matches[-limit:] if len(matches) > limit else matches
-        print(json.dumps({
-            "file": file_path,
-            "pattern": pattern,
-            "matches": trimmed,
-            "count": len(trimmed),
-            "total_matches": len(matches),
-        }))
+        print(
+            json.dumps(
+                {
+                    "file": file_path,
+                    "pattern": pattern,
+                    "matches": trimmed,
+                    "count": len(trimmed),
+                    "total_matches": len(matches),
+                }
+            )
+        )
     except OSError as e:
         print(json.dumps({"error": str(e), "file": file_path}))
         sys.exit(1)

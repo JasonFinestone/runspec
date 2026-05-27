@@ -80,4 +80,5 @@ def test_nc_send_connection_refused_raises() -> None:
 
 def test_nc_command_exported_from_package() -> None:
     from runspec_linux import nc_send as exported
+
     assert exported is nc_send
