@@ -7,6 +7,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.1] — 2026-05-27
+
+### Fixed
+- Window is resizable and maximizable again — removed `frameless=True` from pywebview which was stripping OS resize borders along with the title bar.
+
+---
+
 ## [0.1.0] — 2026-05-27
 
 ### Added

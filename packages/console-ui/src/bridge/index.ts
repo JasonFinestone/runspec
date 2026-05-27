@@ -143,6 +143,8 @@ export interface BridgeApi {
   minimize_window: () => Promise<void>
   toggle_maximize_window: () => Promise<void>
   close_window: () => Promise<void>
+  resize_window: (width: number, height: number) => Promise<void>
+  move_window: (x: number, y: number) => Promise<void>
 }
 
 declare global {

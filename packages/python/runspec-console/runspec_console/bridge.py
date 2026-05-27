@@ -73,6 +73,14 @@ class Bridge:
         if self._window:
             self._window.destroy()
 
+    def resize_window(self, width: int, height: int) -> None:
+        if self._window:
+            self._window.resize(int(width), int(height))
+
+    def move_window(self, x: int, y: int) -> None:
+        if self._window:
+            self._window.move(int(x), int(y))
+
     # ── hosts ────────────────────────────────────────────────────────────────
 
     def get_hosts(self) -> list[dict[str, Any]]:

@@ -528,6 +528,8 @@ export const mockApi: BridgeApi = {
   minimize_window: async () => { console.log('[mock] minimize_window') },
   toggle_maximize_window: async () => { console.log('[mock] toggle_maximize_window') },
   close_window: async () => { console.log('[mock] close_window') },
+  resize_window: async (w: number, h: number) => { console.log('[mock] resize_window', w, h) },
+  move_window: async (x: number, y: number) => { console.log('[mock] move_window', x, y) },
 
   get_in_flight: async () => MOCK_IN_FLIGHT,
 
