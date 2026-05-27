@@ -56,7 +56,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: pypi-linux
       url: https://pypi.org/p/runspec-linux
 
     permissions:
