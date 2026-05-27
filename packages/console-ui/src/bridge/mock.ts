@@ -494,7 +494,7 @@ export const mockApi: BridgeApi = {
     return hosts
   },
 
-  invoke_runnable: async (host, runnable, args, commandPath = []) => {
+  invoke_runnable: async (host, runnable, args, commandPath = [], _group?) => {
     const id = `inv-${++invocationCounter}`
     console.log('[mock] invoke_runnable', { host, runnable, args, commandPath, id })
     const cmd = [runnable, ...commandPath].join(' ')
