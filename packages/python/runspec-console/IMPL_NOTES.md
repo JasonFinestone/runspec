@@ -141,3 +141,29 @@ implemented. Marked as a **server-side / central git repo** feature for a later 
 | Schedules | `%APPDATA%\runspec-console\runspec_schedules.toml` |
 | Local venv logs | `{venv_root}\logs\{runnable}.log` |
 | Remote logs | fetched via one-shot SSH cat on demand |
+
+---
+
+## Configurable SSH client binary (0.1.6)
+
+`[ssh] binary` in `runspec_config.toml` (Settings → General → SSH client binary).
+
+Defaults to `"ssh"`. Set to `plink.exe` or a full path to use PuTTY's plink instead.
+Plink is detected by `"plink" in Path(binary).stem.lower()` and triggers different flags:
+
+| Operation | OpenSSH flag | plink flag |
+|-----------|-------------|------------|
+| Non-interactive | `-o BatchMode=yes` | `-batch` |
+| Connect timeout | `-o ConnectTimeout=3` | `-connecttimeout 3` |
+
+All SSH operations in `bridge.py` route through `_ssh_binary()`: connectivity probes (`_check_connected`), discovery (`discover_remote`), invocation (`run_remote`), history fetch (`_get_remote_history`), and host tests (`test_host`).
+
+**First-time plink connection:** plink may prompt to cache the host key on first use. Pre-accept by opening a PuTTY session to the same host at least once — PuTTY and plink share the same Windows Registry key store.
+
+---
+
+## Next / queued work (as of 2026-05-28)
+
+- `runspec emit --rundeck` — emit Rundeck job YAML per runnable (see `docs/design/emit-ansible-rundeck.md`)
+- `runspec emit --ansible` — emit Ansible module Python file per runnable
+- `runspec push --rundeck` — POST to Rundeck REST API (deferred until file emit is in use)
