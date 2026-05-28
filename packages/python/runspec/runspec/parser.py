@@ -246,8 +246,6 @@ def _print_help(name: str, script: dict[str, Any], command: str | None) -> None:
 
     # ── Usage line ────────────────────────────────────────────────────────────
     usage_parts = [full_name]
-    if commands:
-        usage_parts.append("<command>")
     for arg_name, spec in flag_args:
         flag = f"--{arg_name}"
         if spec.get("type") == "flag":
@@ -263,6 +261,8 @@ def _print_help(name: str, script: dict[str, Any], command: str | None) -> None:
             usage_parts.append(f"[<{arg_name}>]")
     for arg_name, _ in rest_args:
         usage_parts.append(f"[-- <{arg_name}>...]")
+    if commands:
+        usage_parts.append("<command>")
 
     print(f"Usage: {' '.join(usage_parts)}")
     if description:
