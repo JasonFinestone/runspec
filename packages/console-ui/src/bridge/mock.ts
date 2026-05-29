@@ -607,7 +607,7 @@ export const mockApi: BridgeApi = {
     return id
   },
   open_terminal: async (host: string): Promise<string> => {
-    const sessionId = Math.random().toString(36).slice(2, 18)
+    const sessionId = crypto.randomUUID()
     const _dispatch = (event: string, detail: unknown) =>
       window.dispatchEvent(new CustomEvent(event, { detail }))
     setTimeout(() => {
